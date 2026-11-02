@@ -15,7 +15,8 @@ import { request } from '../data';
 import { colors, fonts } from '../theme';
 
 const EASE_OUT = Easing.bezier(0.32, 0.72, 0, 1);
-const PROCESSING_MS = 3500;
+const PROCESSING_MIN_MS = 3000;
+const PROCESSING_MAX_MS = 5000;
 const DONE_HOLD_MS = 1100;
 
 type Props = {
@@ -57,12 +58,13 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
 
   const handlePaid = () => {
     setPhase('processing');
+    const processingMs = PROCESSING_MIN_MS + Math.random() * (PROCESSING_MAX_MS - PROCESSING_MIN_MS);
     timers.current.push(
       setTimeout(() => {
         setPhase('done');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }, PROCESSING_MS),
-      setTimeout(onPaid, PROCESSING_MS + DONE_HOLD_MS),
+      }, processingMs),
+      setTimeout(onPaid, processingMs + DONE_HOLD_MS),
     );
   };
 
