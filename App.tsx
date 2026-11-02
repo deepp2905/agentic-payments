@@ -95,7 +95,6 @@ function Flow() {
   return (
     <View style={{ flex: 1 }}>
       <ActivityScreen
-        pending={!resolved}
         resolved={resolved}
         onReview={() => setSheetOpen(true)}
         onFilterLongPress={triggerDemo}

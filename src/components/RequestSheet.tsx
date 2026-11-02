@@ -13,8 +13,8 @@ import * as Haptics from 'expo-haptics';
 import { SlideToPay, type PayPhase } from './SlideToPay';
 import { request } from '../data';
 import { colors, fonts } from '../theme';
+import { EASE_OUT, SHEET_CLOSE_MS, SHEET_OPEN_MS } from '../motion';
 
-const EASE_OUT = Easing.bezier(0.32, 0.72, 0, 1);
 const PROCESSING_MIN_MS = 3000;
 const PROCESSING_MAX_MS = 5000;
 const DONE_HOLD_MS = 1100;
@@ -39,9 +39,9 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
     if (visible) {
       setMounted(true);
       setPhase('idle');
-      progress.value = withTiming(1, { duration: 420, easing: EASE_OUT });
+      progress.value = withTiming(1, { duration: SHEET_OPEN_MS, easing: EASE_OUT });
     } else if (mounted) {
-      progress.value = withTiming(0, { duration: 260, easing: Easing.in(Easing.quad) }, (finished) => {
+      progress.value = withTiming(0, { duration: SHEET_CLOSE_MS, easing: Easing.in(Easing.quad) }, (finished) => {
         if (finished) scheduleOnRN(setMounted, false);
       });
     }
