@@ -36,6 +36,7 @@ export function SlideToPay({ phase, onComplete }: Props) {
   const start = useSharedValue(0);
   const done = useSharedValue(false);
   const label = useSharedValue(1);
+  const atEnd = useSharedValue(false);
 
   const content = useSharedValue(1);
   const spinner = useSharedValue(0);
@@ -56,10 +57,7 @@ export function SlideToPay({ phase, onComplete }: Props) {
     }
   }, [phase]);
 
-  const complete = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onComplete();
-  };
+  const reachedEnd = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   const touch = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
   const pan = usePanGesture({
@@ -78,6 +76,12 @@ export function SlideToPay({ phase, onComplete }: Props) {
       'worklet';
       if (done.value) return;
       x.value = Math.min(Math.max(start.value + e.translationX, 0), maxX);
+      if (x.value >= maxX && !atEnd.value) {
+        atEnd.value = true;
+        scheduleOnRN(reachedEnd);
+      } else if (x.value < maxX - 2) {
+        atEnd.value = false;
+      }
     },
     onDeactivate: (e) => {
       'worklet';
@@ -86,7 +90,9 @@ export function SlideToPay({ phase, onComplete }: Props) {
       if (projected >= maxX * COMPLETE_AT) {
         done.value = true;
         x.value = withTiming(maxX, { duration: 180, easing: Easing.out(Easing.quad) });
-        scheduleOnRN(complete);
+        // A fling that releases short of the end still gets the end-stop haptic.
+        if (!atEnd.value) scheduleOnRN(reachedEnd);
+        scheduleOnRN(onComplete);
       } else {
         x.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
         label.value = withTiming(1, { duration: 150 });
