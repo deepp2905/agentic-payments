@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "agentic-payments",
+    "name": "Agentic Payments",
     "slug": "agentic-payments",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E0E0E",
     "ios": {
       "supportsTablet": true
     },
@@ -20,6 +21,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
