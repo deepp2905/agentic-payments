@@ -70,9 +70,8 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, scrimStyle]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={paying ? undefined : onClose} />
-      </Animated.View>
+      {/* Blocks touches to the screen behind; only the close button dismisses */}
+      <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, scrimStyle]} />
 
       <Animated.View
         style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 8 }, sheetStyle]}
