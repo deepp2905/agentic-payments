@@ -4,7 +4,6 @@ import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   Easing,
-  interpolate,
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
@@ -37,6 +36,7 @@ export function SlideToPay({ phase, onComplete }: Props) {
   const x = useSharedValue(0);
   const start = useSharedValue(0);
   const done = useSharedValue(false);
+  const label = useSharedValue(1);
 
   const content = useSharedValue(1);
   const spinner = useSharedValue(0);
@@ -71,6 +71,10 @@ export function SlideToPay({ phase, onComplete }: Props) {
       start.value = x.value;
       scheduleOnRN(touch);
     },
+    onActivate: () => {
+      'worklet';
+      label.value = withTiming(0, { duration: 100, easing: Easing.out(Easing.quad) });
+    },
     onUpdate: (e) => {
       'worklet';
       if (done.value) return;
@@ -85,15 +89,14 @@ export function SlideToPay({ phase, onComplete }: Props) {
         x.value = withTiming(maxX, { duration: 180, easing: Easing.out(Easing.quad) });
         scheduleOnRN(complete);
       } else {
-        x.value = withSpring(0, { damping: 20, stiffness: 260 });
+        x.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+        label.value = withTiming(1, { duration: 150 });
       }
     },
   });
 
   const fillStyle = useAnimatedStyle(() => ({ width: THUMB + x.value }));
-  const labelStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(x.value, [0, maxX * 0.5], [1, 0], 'clamp'),
-  }));
+  const labelStyle = useAnimatedStyle(() => ({ opacity: label.value }));
   const contentStyle = useAnimatedStyle(() => ({ opacity: content.value }));
   const spinnerStyle = useAnimatedStyle(() => ({
     opacity: spinner.value,
@@ -120,9 +123,9 @@ export function SlideToPay({ phase, onComplete }: Props) {
         <Animated.View style={[styles.fill, fillStyle]}>
           <Animated.View style={[StyleSheet.absoluteFill, contentStyle]} pointerEvents="none">
             {/* Dark copy of the label, revealed as the fill passes over it */}
-            <View style={[styles.centered, { width: innerWidth }]}>
+            <Animated.View style={[styles.centered, { width: innerWidth }, labelStyle]}>
               <Text style={[styles.labelText, { color: colors.bg }]}>Slide to pay</Text>
-            </View>
+            </Animated.View>
             <View style={styles.arrow}>
               <ArrowIcon />
             </View>
