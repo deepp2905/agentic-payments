@@ -9,7 +9,6 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -52,8 +51,8 @@ export function SlideToPay({ phase, onComplete }: Props) {
       rotation.value = withRepeat(withTiming(360, { duration: 800, easing: Easing.linear }), -1);
     } else if (phase === 'done') {
       spinner.value = withTiming(0, { duration: 150 }, () => cancelAnimation(rotation));
-      tick.value = withDelay(120, withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) }));
-      doneLabel.value = withDelay(180, withSpring(1, { damping: 16, stiffness: 220 }));
+      tick.value = withDelay(120, withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) }));
+      doneLabel.value = withDelay(120, withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) }));
     }
   }, [phase]);
 
@@ -103,10 +102,7 @@ export function SlideToPay({ phase, onComplete }: Props) {
     transform: [{ rotate: `${rotation.value}deg` }, { scale: 0.8 + spinner.value * 0.2 }],
   }));
   const doneStyle = useAnimatedStyle(() => ({ opacity: Math.min(tick.value * 2, 1) }));
-  const doneLabelStyle = useAnimatedStyle(() => ({
-    opacity: doneLabel.value,
-    transform: [{ translateX: (1 - doneLabel.value) * -6 }],
-  }));
+  const doneLabelStyle = useAnimatedStyle(() => ({ opacity: doneLabel.value }));
   const tickProps = useAnimatedProps(() => ({
     strokeDashoffset: TICK_LENGTH * (1 - tick.value),
   }));
