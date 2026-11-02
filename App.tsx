@@ -87,7 +87,7 @@ function Flow() {
       agent: request.agent,
       amount: request.amount,
       status,
-      detail: status === 'paid' ? 'just now' : undefined,
+      flag: status === 'paid' ? 'just now' : undefined,
     });
     setSheetOpen(false);
   };
