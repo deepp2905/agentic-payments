@@ -16,8 +16,8 @@ import { request } from '../data';
 import { colors, fonts } from '../theme';
 import { EASE_OUT, SHEET_CLOSE_MS, SHEET_OPEN_MS } from '../motion';
 
-const PROCESSING_MIN_MS = 3000;
-const PROCESSING_MAX_MS = 5000;
+const PROCESSING_MIN_MS = 2000;
+const PROCESSING_MAX_MS = 3500;
 // How long "Done" shows before the slider turns into the Close button.
 const DONE_HOLD_MS = 1000;
 const DECLINE_HEIGHT = 44;
@@ -42,26 +42,15 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
   const progress = useSharedValue(0);
   const declineSpace = useSharedValue(1);
 
-  // Opening mounts the sheet with a fresh request; set during render so the
-  // first frame already has it, rather than in an effect.
-  const [wasVisible, setWasVisible] = useState(visible);
-  if (visible !== wasVisible) {
-    setWasVisible(visible);
-    if (visible) {
-      setMounted(true);
-      setPhase('idle');
-    }
-  }
-
   useEffect(() => {
     if (visible) {
       progress.value = withTiming(1, { duration: SHEET_OPEN_MS, easing: EASE_OUT });
-    } else {
+    } else if (mounted) {
       progress.value = withTiming(0, { duration: SHEET_CLOSE_MS, easing: Easing.in(Easing.quad) }, (finished) => {
         if (finished) scheduleOnRN(setMounted, false);
       });
     }
-  }, [visible]);
+  }, [visible, mounted, progress]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 

@@ -8,7 +8,7 @@ Built with Expo and React Native. The focus is the handoff between a notificatio
 
 1. Open the app and tap **Review** on the pending request.
 2. Read the amount, product, and shopping checks in the bottom sheet.
-3. Drag the yellow control to the right. An incomplete slide returns to the start; a completed slide starts a simulated processing state lasting 3–5 seconds.
+3. Drag the yellow control to the right. An incomplete slide returns to the start; a completed slide starts a simulated processing state lasting 2–3.5 seconds.
 4. **Done** confirms completion. At this point the paid row enters Activity behind the sheet, the pending card collapses, and **Decline request** fades and collapses out of the sheet.
 5. After a one-second hold, Done becomes **Close**. Close or the top-right ✕ dismisses the sheet. Neither creates another transaction.
 

@@ -49,6 +49,7 @@ export default function App() {
 
 function Flow() {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetSession, setSheetSession] = useState(0);
   const [resolved, setResolved] = useState<Transaction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -57,10 +58,16 @@ function Flow() {
     ensurePermission();
   }, []);
 
+  const openRequest = () => {
+    // Mount fresh animation and gesture state before starting the entrance.
+    setSheetSession((session) => session + 1);
+    setSheetOpen(true);
+  };
+
   useRequestNotificationTap(() => {
     // A tapped notification always brings back a fresh pending request.
     setResolved(null);
-    setSheetOpen(true);
+    openRequest();
   });
 
   const showToast = (message: string) => {
@@ -95,10 +102,11 @@ function Flow() {
     <View style={{ flex: 1 }}>
       <ActivityScreen
         resolved={resolved}
-        onReview={() => setSheetOpen(true)}
+        onReview={openRequest}
         onFilterLongPress={triggerDemo}
       />
       <RequestSheet
+        key={sheetSession}
         visible={sheetOpen}
         onClose={() => setSheetOpen(false)}
         onDecline={() => {
