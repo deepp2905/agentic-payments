@@ -39,12 +39,21 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
   const close = finished ? onPaid : onClose;
   const progress = useSharedValue(0);
 
-  useEffect(() => {
+  // Opening mounts the sheet with a fresh request; set during render so the
+  // first frame already has it, rather than in an effect.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setMounted(true);
       setPhase('idle');
+    }
+  }
+
+  useEffect(() => {
+    if (visible) {
       progress.value = withTiming(1, { duration: SHEET_OPEN_MS, easing: EASE_OUT });
-    } else if (mounted) {
+    } else {
       progress.value = withTiming(0, { duration: SHEET_CLOSE_MS, easing: Easing.in(Easing.quad) }, (finished) => {
         if (finished) scheduleOnRN(setMounted, false);
       });
