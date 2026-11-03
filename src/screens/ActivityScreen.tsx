@@ -65,7 +65,11 @@ export function ActivityScreen({ resolved, onReview, onFilterLongPress }: Props)
         >
           <View
             style={styles.pendingWrap}
-            onLayout={(e: LayoutChangeEvent) => setCardHeight(e.nativeEvent.layout.height)}
+            // Only measure the card at full size: mid-collapse readings would
+            // shrink it for good and clip the text when it comes back.
+            onLayout={(e: LayoutChangeEvent) => {
+              if (!resolved) setCardHeight(e.nativeEvent.layout.height);
+            }}
           >
             <View style={styles.pending}>
               <View style={{ flex: 1, gap: 2 }}>
@@ -181,7 +185,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pendingWrap: { paddingHorizontal: 12, paddingVertical: 16 },
+  pendingWrap: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 16 },
   pending: {
     flexDirection: 'row',
     alignItems: 'center',
