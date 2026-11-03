@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -19,6 +20,9 @@ const PROCESSING_MIN_MS = 3000;
 const PROCESSING_MAX_MS = 5000;
 // How long "Done" shows before the slider turns into the Close button.
 const DONE_HOLD_MS = 1000;
+const DECLINE_HEIGHT = 44;
+const DECLINE_GAP = 8;
+const DECLINE_COLLAPSE_MS = 240;
 
 type Props = {
   visible: boolean;
@@ -36,6 +40,7 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
   const paying = phase !== 'idle';
   const finished = phase === 'done' || phase === 'closable';
   const progress = useSharedValue(0);
+  const declineSpace = useSharedValue(1);
 
   // Opening mounts the sheet with a fresh request; set during render so the
   // first frame already has it, rather than in an effect.
@@ -60,9 +65,19 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
+  useEffect(() => {
+    declineSpace.value = finished
+      ? withTiming(0, { duration: DECLINE_COLLAPSE_MS, easing: EASE_OUT, reduceMotion: ReduceMotion.System })
+      : 1;
+  }, [finished, declineSpace]);
+
   const scrimStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: (1 - progress.value) * height * 0.7 }],
+  }));
+  const declineStyle = useAnimatedStyle(() => ({
+    height: (DECLINE_HEIGHT + DECLINE_GAP) * declineSpace.value,
+    opacity: declineSpace.value,
   }));
 
   if (!mounted) return null;
@@ -125,15 +140,24 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
           </View>
         </View>
 
-        <View style={{ gap: 8 }}>
+        <View>
           <SlideToPay phase={phase} onComplete={handlePaid} onClose={onClose} />
-          <Pressable
-            onPress={onDecline}
-            disabled={paying}
-            style={({ pressed }) => [styles.decline, pressed && { opacity: 0.3 }, phase === 'processing' && { opacity: 0.3 }, finished && { opacity: 0 }]}
+          <Animated.View
+            style={[styles.declineCollapse, declineStyle]}
+            pointerEvents={paying ? 'none' : 'auto'}
+            accessibilityElementsHidden={finished}
+            importantForAccessibility={finished ? 'no-hide-descendants' : 'auto'}
           >
-            <Text style={styles.declineText}>Decline request</Text>
-          </Pressable>
+            <View style={styles.declineWrap}>
+              <Pressable
+                onPress={onDecline}
+                disabled={paying}
+                style={({ pressed }) => [styles.decline, pressed && { opacity: 0.3 }, phase === 'processing' && { opacity: 0.3 }]}
+              >
+                <Text style={styles.declineText}>Decline request</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
         </View>
       </Animated.View>
     </View>
@@ -179,6 +203,9 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   checkValue: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   checkText: { color: colors.ink, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
-  decline: { height: 44, alignItems: 'center', justifyContent: 'center' },
+  declineCollapse: { overflow: 'hidden' },
+  // Keep the button at full size while its outer space collapses, including the gap.
+  declineWrap: { flexShrink: 0, paddingTop: DECLINE_GAP },
+  decline: { height: DECLINE_HEIGHT, alignItems: 'center', justifyContent: 'center' },
   declineText: { color: colors.subtle, fontFamily: fonts.semibold, fontSize: 15, lineHeight: 20 },
 });
