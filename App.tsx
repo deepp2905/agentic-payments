@@ -89,7 +89,6 @@ function Flow() {
       status,
       flag: status === 'paid' ? 'just now' : undefined,
     });
-    setSheetOpen(false);
   };
 
   return (
@@ -105,6 +104,7 @@ function Flow() {
         onDecline={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           resolve('declinedByYou');
+          setSheetOpen(false);
         }}
         onPaid={() => resolve('paid')}
       />

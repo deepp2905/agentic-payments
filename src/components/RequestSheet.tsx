@@ -35,8 +35,6 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const paying = phase !== 'idle';
   const finished = phase === 'done' || phase === 'closable';
-  // Once paid, any close settles the request as paid.
-  const close = finished ? onPaid : onClose;
   const progress = useSharedValue(0);
 
   // Opening mounts the sheet with a fresh request; set during render so the
@@ -76,6 +74,8 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
       setTimeout(() => {
         setPhase('done');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // The paid row joins Activity behind the sheet while "Done" shows.
+        onPaid();
       }, processingMs),
       setTimeout(() => setPhase('closable'), processingMs + DONE_HOLD_MS),
     );
@@ -97,7 +97,7 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
             <Text style={styles.agentLabel}>{request.agentRole}</Text>
           </View>
           <Pressable
-            onPress={close}
+            onPress={onClose}
             disabled={phase === 'processing'}
             hitSlop={8}
             style={({ pressed }) => [styles.close, pressed && { opacity: 0.7 }]}
@@ -126,7 +126,7 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
         </View>
 
         <View style={{ gap: 8 }}>
-          <SlideToPay phase={phase} onComplete={handlePaid} onClose={close} />
+          <SlideToPay phase={phase} onComplete={handlePaid} onClose={onClose} />
           <Pressable
             onPress={onDecline}
             disabled={paying}
