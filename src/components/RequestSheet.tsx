@@ -17,7 +17,8 @@ import { EASE_OUT, SHEET_CLOSE_MS, SHEET_OPEN_MS } from '../motion';
 
 const PROCESSING_MIN_MS = 3000;
 const PROCESSING_MAX_MS = 5000;
-const DONE_HOLD_MS = 1100;
+// How long "Done" shows before the slider turns into the Close button.
+const DONE_HOLD_MS = 1000;
 
 type Props = {
   visible: boolean;
@@ -33,6 +34,9 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
   const [phase, setPhase] = useState<PayPhase>('idle');
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const paying = phase !== 'idle';
+  const finished = phase === 'done' || phase === 'closable';
+  // Once paid, any close settles the request as paid.
+  const close = finished ? onPaid : onClose;
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -64,7 +68,7 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
         setPhase('done');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, processingMs),
-      setTimeout(onPaid, processingMs + DONE_HOLD_MS),
+      setTimeout(() => setPhase('closable'), processingMs + DONE_HOLD_MS),
     );
   };
 
@@ -84,8 +88,8 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
             <Text style={styles.agentLabel}>{request.agentRole}</Text>
           </View>
           <Pressable
-            onPress={onClose}
-            disabled={paying}
+            onPress={close}
+            disabled={phase === 'processing'}
             hitSlop={8}
             style={({ pressed }) => [styles.close, pressed && { opacity: 0.7 }]}
             accessibilityLabel="Close"
@@ -113,11 +117,11 @@ export function RequestSheet({ visible, onClose, onDecline, onPaid }: Props) {
         </View>
 
         <View style={{ gap: 8 }}>
-          <SlideToPay phase={phase} onComplete={handlePaid} />
+          <SlideToPay phase={phase} onComplete={handlePaid} onClose={close} />
           <Pressable
             onPress={onDecline}
             disabled={paying}
-            style={({ pressed }) => [styles.decline, pressed && { opacity: 0.3 }, phase === 'processing' && { opacity: 0.3 }, phase === 'done' && { opacity: 0 }]}
+            style={({ pressed }) => [styles.decline, pressed && { opacity: 0.3 }, phase === 'processing' && { opacity: 0.3 }, finished && { opacity: 0 }]}
           >
             <Text style={styles.declineText}>Decline request</Text>
           </Pressable>

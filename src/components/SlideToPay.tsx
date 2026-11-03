@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   Easing,
+  interpolateColor,
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
@@ -25,11 +26,12 @@ const TICK_LENGTH = 18;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-export type PayPhase = 'idle' | 'processing' | 'done';
+// 'closable': the finished slider has turned into the Close button.
+export type PayPhase = 'idle' | 'processing' | 'done' | 'closable';
 
-type Props = { phase: PayPhase; onComplete: () => void };
+type Props = { phase: PayPhase; onComplete: () => void; onClose: () => void };
 
-export function SlideToPay({ phase, onComplete }: Props) {
+export function SlideToPay({ phase, onComplete, onClose }: Props) {
   const [trackWidth, setTrackWidth] = useState(0);
   const maxX = Math.max(trackWidth - INSET * 2 - THUMB, 1);
   const x = useSharedValue(0);
@@ -43,6 +45,7 @@ export function SlideToPay({ phase, onComplete }: Props) {
   const rotation = useSharedValue(0);
   const tick = useSharedValue(0);
   const doneLabel = useSharedValue(0);
+  const closeMix = useSharedValue(0);
 
   useEffect(() => {
     if (phase === 'processing') {
@@ -54,6 +57,8 @@ export function SlideToPay({ phase, onComplete }: Props) {
       spinner.value = withTiming(0, { duration: 150 }, () => cancelAnimation(rotation));
       tick.value = withDelay(120, withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) }));
       doneLabel.value = withDelay(120, withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) }));
+    } else if (phase === 'closable') {
+      closeMix.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) });
     }
   }, [phase]);
 
@@ -100,14 +105,24 @@ export function SlideToPay({ phase, onComplete }: Props) {
     },
   });
 
-  const fillStyle = useAnimatedStyle(() => ({ width: THUMB + x.value }));
+  // Track and fill both settle on the close icon button's colour.
+  const trackStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(closeMix.value, [0, 1], [colors.bg, colors.avatar]),
+  }));
+  const fillStyle = useAnimatedStyle(() => ({
+    width: THUMB + x.value,
+    backgroundColor: interpolateColor(closeMix.value, [0, 1], [colors.accent, colors.avatar]),
+  }));
+  const closeLabelStyle = useAnimatedStyle(() => ({ opacity: closeMix.value }));
   const labelStyle = useAnimatedStyle(() => ({ opacity: label.value }));
   const contentStyle = useAnimatedStyle(() => ({ opacity: content.value }));
   const spinnerStyle = useAnimatedStyle(() => ({
     opacity: spinner.value,
     transform: [{ rotate: `${rotation.value}deg` }, { scale: 0.8 + spinner.value * 0.2 }],
   }));
-  const doneStyle = useAnimatedStyle(() => ({ opacity: Math.min(tick.value * 2, 1) }));
+  const doneStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(tick.value * 2, 1) * (1 - closeMix.value),
+  }));
   const doneLabelStyle = useAnimatedStyle(() => ({ opacity: doneLabel.value }));
   const tickProps = useAnimatedProps(() => ({
     strokeDashoffset: TICK_LENGTH * (1 - tick.value),
@@ -117,7 +132,14 @@ export function SlideToPay({ phase, onComplete }: Props) {
   const innerWidth = trackWidth - INSET * 2;
 
   return (
-    <View style={styles.track} onLayout={onLayout}>
+    <Pressable
+      onPress={onClose}
+      disabled={phase !== 'closable'}
+      style={({ pressed }) => pressed && { opacity: 0.7 }}
+      accessibilityRole="button"
+      accessibilityLabel={phase === 'closable' ? 'Close' : undefined}
+    >
+    <Animated.View style={[styles.track, trackStyle]} onLayout={onLayout}>
       <Animated.Text style={[styles.label, labelStyle]} pointerEvents="none">
         Slide to pay
       </Animated.Text>
@@ -157,9 +179,14 @@ export function SlideToPay({ phase, onComplete }: Props) {
             </Svg>
             <Animated.Text style={[styles.doneText, doneLabelStyle]}>Done</Animated.Text>
           </Animated.View>
+
+          <Animated.View style={[styles.centered, { width: innerWidth }, closeLabelStyle]} pointerEvents="none">
+            <Text style={styles.closeText}>Close</Text>
+          </Animated.View>
         </Animated.View>
       </GestureDetector>
-    </View>
+    </Animated.View>
+    </Pressable>
   );
 }
 
@@ -199,6 +226,7 @@ const styles = StyleSheet.create({
   },
   doneRow: { flexDirection: 'row', gap: 8 },
   doneText: { color: colors.bg, fontFamily: fonts.semibold, fontSize: 17, lineHeight: 22 },
+  closeText: { color: colors.ink, fontFamily: fonts.semibold, fontSize: 17, lineHeight: 22 },
   arrow: {
     position: 'absolute',
     right: 0,
